@@ -1,0 +1,18 @@
+[package]
+name = "open-gl-practice"
+version = "0.1.0"
+authors = ["Samuel Egiuino <samueleguino97@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+stb_image = "0.2.2"
+cgmath = "0.18.0"
+glad-gl = { path = "C:\\Users\\samue\\Documents\\Libraries\\glad-gl" }
+tobj = "2.0.4"
+serde_json = "1.0"
+gltf = "0.15"
+[dependencies.glfw]
+git = "https://github.com/bjz/glfw-rs.git"
