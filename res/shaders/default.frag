@@ -9,6 +9,10 @@ in vec3 color;
 in vec2 texCoord;
 
 uniform sampler2D diffuse0;
+uniform sampler2D diffuse1;
+uniform sampler2D diffuse2;
+uniform sampler2D diffuse3;
+
 uniform sampler2D specular0;
 
 uniform vec4 lightColor;
@@ -86,5 +90,5 @@ vec4 spotLight(){
 
 void main()
 {
-  FragColor = pointLight();
+  FragColor = directionalLight();
 }

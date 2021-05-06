@@ -3,11 +3,12 @@ use crate::mesh::{Mesh, Vertex};
 use crate::shader::Shader;
 use crate::texture::Texture;
 use cgmath::prelude::*;
-use cgmath::{vec2, vec3, Matrix4, Quaternion, Vector2, Vector3};
+use cgmath::{vec3, Matrix4, Quaternion, Vector2, Vector3};
 use gltf::buffer::Data;
 use gltf::image::Source;
 use gltf::Mesh as GLTFMesh;
-use gltf::{Document, Node};
+use gltf::{scene::Node, Document, Scene};
+use std::path::Path;
 pub struct Model {
     meshes: Vec<Mesh>,
     textures: Vec<Texture>,
@@ -16,6 +17,7 @@ pub struct Model {
     rot_meshes: Vec<Quaternion<f32>>,
     scale_meshes: Vec<Vector3<f32>>,
     matrix_meshes: Vec<Matrix4<f32>>,
+    path: String,
 }
 impl Model {
     pub fn from_gltf(file_path: &str) -> Self {
@@ -27,17 +29,18 @@ impl Model {
             trans_meshes: Vec::new(),
             textures: Vec::new(),
             matrix_meshes: Vec::new(),
+            path: file_path.to_string(),
         };
-        new_model.load_data();
+        new_model.load_data(file_path);
         new_model
     }
-    fn load_data(&mut self) {
-        let (gltf, buffers, _) = gltf::import("res/models/ToyCar.glb").expect("Couldnt read model");
+    fn load_data(&mut self, path: &str) {
+        let (gltf, buffers, _) = gltf::import(path).expect("Couldnt read model");
 
         self.buffers = buffers;
         self.load_textures(&gltf);
-
-        for node in gltf.nodes() {
+        let scenes: Vec<Scene> = gltf.scenes().collect();
+        for node in scenes[0].nodes() {
             self.load_node(node, Matrix4::identity());
         }
     }
@@ -46,6 +49,7 @@ impl Model {
         let mut normals: Vec<Vector3<f32>> = Vec::new();
         let mut tex_uvs: Vec<Vector2<f32>> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
+
         for primitive in mesh.primitives() {
             let reader = primitive.reader(|buffer| Some(&self.buffers[buffer.index()]));
             if let Some(iter) = reader.read_positions() {
@@ -63,6 +67,7 @@ impl Model {
                     tex_uvs.push(Vector2::from(vertex_uvs));
                 }
             }
+
             indices = if let Some(indices) = reader.read_indices() {
                 Some(indices.into_u32().map(|i| i as u32).collect()).unwrap()
             } else {
@@ -124,23 +129,28 @@ impl Model {
         let mut tex_unit = 0;
         gltf.images().for_each(|img| match img.source() {
             Source::Uri { uri, .. } => {
-                let tex_type = {
-                    if uri.contains("baseColor") {
-                        "diffuse";
-                        tex_unit += 1;
-                    }
-                    if uri.contains("metallicRoughness") {
-                        "specular";
+                let mut tex_type = "";
+                if uri.contains("baseColor") {
+                    tex_type = "diffuse";
+                }
+                if uri.contains("metallicRoughness") {
+                    tex_type = "specular"
+                }
 
-                        tex_unit += 1;
-                    }
-                    ""
-                };
-                let texture = Texture::from_file(uri, tex_type, tex_unit);
+                let tex_path = Path::join(Path::new(&self.path), Path::new("../"));
+                println!("{:?}", tex_path);
+                let texture = Texture::from_file(
+                    &(tex_path.as_os_str().to_str().unwrap().to_string() + uri),
+                    tex_type,
+                    tex_unit,
+                    false,
+                );
                 textures.push(texture);
+                tex_unit += 1;
             }
             _ => {}
         });
+        self.textures = textures;
     }
 
     pub fn draw(&mut self, shader: &Shader, camera: &Camera) {

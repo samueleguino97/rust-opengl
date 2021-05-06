@@ -104,11 +104,11 @@ impl Mesh {
             let mut num = String::new();
             let tex_type = &texture.texture_type;
             if tex_type == "diffuse" {
-                num_diffuse += 1;
                 num = num_diffuse.to_string();
+                num_diffuse += 1;
             } else if tex_type == "specular" {
-                num_spec += 1;
                 num = num_spec.to_string();
+                num_spec += 1;
             }
 
             let uniform_name = String::from(tex_type) + &num;

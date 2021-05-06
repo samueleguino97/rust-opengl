@@ -10,7 +10,7 @@ pub struct Texture {
     pub slot: gl::GLuint,
 }
 impl Texture {
-    pub fn from_file(file_path: &str, texture_type: &str, slot: gl::GLuint) -> Self {
+    pub fn from_file(file_path: &str, texture_type: &str, slot: gl::GLuint, flip: bool) -> Self {
         let mut new_texture = Texture {
             width: 0,
             height: 0,
@@ -22,8 +22,11 @@ impl Texture {
         let mut bpp: i32 = 0;
         //Load file
         let path_as_c_str = CString::new(file_path).expect("Couldnt convert to cstring");
+
         unsafe {
-            stb_image::stb_image::bindgen::stbi_set_flip_vertically_on_load(1);
+            if flip {
+                stb_image::stb_image::bindgen::stbi_set_flip_vertically_on_load(1);
+            }
             let img = stb_image::stb_image::bindgen::stbi_load(
                 path_as_c_str.as_ptr(),
                 &mut new_texture.width,
@@ -50,12 +53,12 @@ impl Texture {
             gl::TexParameteri(
                 gl::GL_TEXTURE_2D,
                 gl::GL_TEXTURE_WRAP_S,
-                gl::GL_REPEAT as i32,
+                gl::GL_CLAMP_TO_BORDER as i32,
             );
             gl::TexParameteri(
                 gl::GL_TEXTURE_2D,
                 gl::GL_TEXTURE_WRAP_T,
-                gl::GL_REPEAT as i32,
+                gl::GL_CLAMP_TO_BORDER as i32,
             );
             //Load Texture
             gl::TexImage2D(
@@ -63,7 +66,7 @@ impl Texture {
                 0,
                 gl::GL_RGBA as i32,
                 new_texture.width,
-                new_texture.width,
+                new_texture.height,
                 0,
                 gl::GL_RGBA,
                 gl::GL_UNSIGNED_BYTE,
@@ -77,6 +80,7 @@ impl Texture {
             gl::BindTexture(gl::GL_TEXTURE_2D, 0);
             stb_image::stb_image::bindgen::stbi_image_free(img as *mut gl::types::GLvoid);
         }
+
         new_texture
     }
     pub fn bind(&self) {
